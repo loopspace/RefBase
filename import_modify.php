@@ -21,7 +21,6 @@
 	// the data, add or modify any details as necessary and add the record to the database. Multiple records will be imported directly.
 	// TODO: I18n
 
-
 	// Incorporate some include files:
 	include 'initialize/db.inc.php'; // 'db.inc.php' is included to hide username and password
 	include 'includes/include.inc.php'; // include common functions
@@ -350,6 +349,15 @@
 			// Fetch source data from PubMed.gov for all given PubMed IDs:
 			list($errors, $sourceText) = fetchDataFromPubMed($idArray, $sourceFormat); // function 'fetchDataFromPubMed()' is defined in 'import.inc.php'
 		}
+		// - MathSciNet MRs:
+		if (eregi("^MathSciNet$", $sourceFormat) AND ereg("[0-9]", $sourceIDs))
+		{
+			// Split on any whitespace between PubMed IDs:
+			$idArray = preg_split("/\s+/", $sourceIDs, -1, PREG_SPLIT_NO_EMPTY);
+
+			// Fetch source data from MathSciNet for all given MathSciNet IDs:
+			list($errors, $sourceText) = fetchDataFromMathSciNet($idArray, $sourceFormat); // function 'fetchDataFromMathSciNet()' is defined in 'import.inc.php'
+		}
 
 		// - arXiv IDs:
 		elseif (eregi("^arXiv XML$", $sourceFormat) AND preg_match("#(arXiv:|http://arxiv\.org/abs/)?([\w.-]+/\d{7}|\d{4}\.\d{4,})(v\d+)?#i", $sourceIDs))
@@ -425,6 +433,70 @@
 		$importRecordNumbersNotRecognizedFormatArray = array();
 	}
 
+        // -------------------------------------------------------------------
+
+	// ANDREW STACEY:
+        // ADD USER KEYWORDS
+
+	// This works, but I'm not happy with the syntax.  The keywords should be specified by a semi-colon-delimited list, each keyword should have an optional first word which identifies a record to apply it to.  However, we need a way to know that the first word is an identifier and not a keyword itself (to allow for cross-referencing).  Also, should an identifier apply to a group of keywords or just to the closest one?  Still not sure how best to use this in practice.
+
+        // For each record, add the "globalKeywords" (if specified) to the user's keys
+
+	if (isset($formVars['globalKeywords'])) {
+		$CountOfRecords = count($importDataArray['records']);
+		for ($i=0; $i < $CountOfRecords; $i++)
+		{
+			if (isset($importDataArray['records'][$i]['user_keys']))
+			{
+				 $importDataArray['records'][$i]['user_keys'] .= ";" . $formVars['globalKeywords'];
+			} else {
+				 $importDataArray['records'][$i]['user_keys'] = $formVars['globalKeywords'];
+			}
+		}
+	}
+
+	$typeFields = array(
+		"CrossRef XML" => "notes",
+		"arXiv XML" => "summary_language",
+		"Pubmed Medline" => "notes",
+		"MathSciNet" => "expedition"
+		);
+
+	if (isset($formVars['Keywords'])) {
+	// For each record, search 'Keywords' for matching keywords.
+		$keywords = explode(";", $formVars['Keywords']);
+	// For a local keyword, part up to whitespace is identifier
+		foreach ($keywords as $tidkeyword) {
+			$idkeyword = trim($tidkeyword);
+			$idkeywordarray = explode(" ", $idkeyword, 2);
+			$sourceFormat = identifySourceID($idkeywordarray[0]); // function 'identifySourceID()' is defined in 'import.inc.php'
+			$searchIn = '';
+			if (isset($typeFields[$sourceFormat])) $searchIn=$typeFields[$sourceFormat];
+		
+			$keywordshash[] = array($idkeywordarray[0],$searchIn,$idkeywordarray[1]);
+		}
+		$CountOfRecords = count($importDataArray['records']);
+		for ($i=0; $i < $CountOfRecords; $i++)
+		{
+		  foreach ($keywordshash as $keywordarray)
+		    {
+		      $id = $keywordarray[0];
+		      $searchIn = $keywordarray[1];
+		      $keyword = $keywordarray[2];
+		      if(eregi($id,$importDataArray['records'][$i][$searchIn]))
+			{
+			  if (isset($importDataArray['records'][$i]['user_keys']))
+			    {
+			      $importDataArray['records'][$i]['user_keys'] .= ";" . $keyword;
+			    }
+			  else
+			    {
+			      $importDataArray['records'][$i]['user_keys'] = $keyword;
+			    }
+			}
+		    }
+		}
+	}
 	// --------------------------------------------------------------------
 
 	// VALIDATE DATA FIELDS:
@@ -565,11 +637,14 @@
 
 	// If we made it here, then the data is considered valid!
 
+	// ANDREW STACEY:
+	// added facility for automatic import
+
 	// IMPORT RECORDS:
 
 	$importedRecordsArray = array();
 
-	if ((count($importRecordNumbersRecognizedFormatArray) == 1) AND !eregi("^(cli|be)", $client)) // if this is the only record we'll need to import -AND- if the import didn't originate from a refbase command line client:
+	if ((count($importRecordNumbersRecognizedFormatArray) == 1) AND !eregi("^(cli|be)", $client) AND !isset($formVars['AutoImport'])) // if this is the only record we'll need to import -AND- if the import didn't originate from a refbase command line client -AND- if the importer didn't request an automatic import:
 	{
 		// If no specific cite key exists in the record data, any existing 'call_number' string gets also copied to the
 		// user-specific 'cite_key' field (which will ensure that this original call number/cite key is retained as

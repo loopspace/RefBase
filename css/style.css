@@ -806,3 +806,84 @@ a:hover .toggletxt {
 	color: #222222;
 }
 /* End ThrashBox code */
+
+/* included from arXiv stylesheet */
+
+/****************************************
+ * arXiv.org Cascading Style Sheet
+ * $Date: 2009/01/23 22:24:28 $
+ ****************************************/
+
+/****************************************
+ * General rules
+ ****************************************/
+
+/****************************************
+ * DL-list styles (/list/arch-ive/new|recent, search)
+ ****************************************/
+
+#arxiv td, div {
+	font-family: "lucida grande",helvetica,arial,sans-serif;
+	font-size: 1em;
+}
+
+#arxiv p {
+	font-family: "lucida grande",helvetica,arial,sans-serif;
+	font-size: 1em;
+}
+
+
+#arxiv .list-dateline {
+  font-style: italic;
+  }
+
+#arxiv dd {
+  padding-bottom: 1em;
+  }
+
+#arxiv .meta {
+  line-height: 130%;
+  }
+
+#arxiv .list-identifier {
+  font-weight: bold;
+    }
+
+#arxiv .descriptor {
+    font-size: normal;
+  display: inline;
+  }
+
+#arxiv .list-authors .descriptor {
+  display: none;
+  }
+
+#arxiv .list-title .descriptor {
+  display: none;
+  }
+
+#arxiv .list-title {
+  font-size: 110%;
+  font-weight: bold;
+  margin: .25em 0 0 0;
+  line-height: 120%;
+  }
+
+#arxiv .list-authors {
+  font-weight: normal;
+  font-size: 100%;
+  }
+
+#arxiv .list-comments {
+  font-weight: normal;
+  font-size: 90%;
+  }
+
+#arxiv .list-journal-ref {
+  font-weight: normal;
+  font-size: 90%;
+  }
+
+#arxiv .list-subjects {
+  font-size: 90%;
+  }

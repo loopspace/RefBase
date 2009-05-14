@@ -619,6 +619,11 @@
 				// - id:
 				$fieldParametersArray['notes'] = str_replace("http://arxiv.org/abs/", "arXiv:", $record->get_permalink()); // extract the arXiv ID from the abstract URL in the 'id' element & prefix it with "arXiv:"
 
+				// ANDREW STACEY:
+				// - base id:
+				// i.e. without version number, using 'summary_language' as a holding place for this at the moment
+				$fieldParametersArray['summary_language'] = preg_replace('%http://arxiv.org/abs/(.*?)(v\d+)$%', 'arXiv:$1', $record->get_id()); // extract the arXiv ID from the abstract URL in the 'id' element & prefix it with "arXiv:"
+
 				// - title:
 				$fieldParametersArray['title'] = $record->get_title();
 
@@ -713,6 +718,11 @@
 
 				// - arxiv:primary_category:
 				// TODO: Should we copy the term given in the 'arxiv:primary_category' element to the 'area' field?
+
+				// ANDREW STACEY:
+				// Yes:
+				if ($area = $record->get_item_tags($arxivNamespace, 'primary_category'))
+					$fieldParametersArray['area'] = $area[0]['attribs']['']['term'];
 
 				// - arxiv:category:
 				$categoriesArray = array();
@@ -2107,7 +2117,8 @@
 			$sourceFormat = "Endnote XML";
 
 		// BibTeX format:
-		elseif (preg_match("/^@\w+\{[^ ,\r\n]* *, *[\r\n]/m", $sourceText)) // BibTeX records must start with the "@" sign, followed by a type specifier and an optional cite key (such as in '@article{steffens1988,')
+		elseif (preg_match("/^@\w+\s*\{[^ ,\r\n]* *, *[\r\n]/m", $sourceText)) // BibTeX records must start with the "@" sign, followed by a type specifier and an optional cite key (such as in '@article{steffens1988,')
+		  // Added: can have a space after the type specifier
 			$sourceFormat = "BibTeX";
 
 		// CrossRef "unixref" XML format:
@@ -2150,6 +2161,10 @@
 		// PubMed IDs:
 		elseif (preg_match("/(?<=^|\s)\d+(?=$|\s)/", $sourceIDs))
 			$idFormat = "Pubmed Medline";
+
+		// MathSciNet MRs:
+		elseif (preg_match("/(?<=^|\s)MR\d+(?=$|\s)/", $sourceIDs))
+		  $idFormat = "MathSciNet";
 
 		return $idFormat;
 	}
@@ -2757,6 +2772,34 @@
 
 	// --------------------------------------------------------------------
 
+	// This function fetches source data from MathSciNet for all 
+	// MathSciNet IDs given in '$pmidArray':
+	//  more info on the Entrez Programming Utilities:
+	//  <http://eutils.ncbi.nlm.nih.gov/entrez/query/static/eutils_help.html>)
+	function fetchDataFromMathSciNet($pmidArray, $sourceFormat = "MathSciNet")
+	{
+		global $errors;
+
+		$sourceText = "";
+
+		if (!empty($pmidArray))
+		{
+			// Remove any duplicate IDs:
+			$pmidArray = array_unique($pmidArray);
+
+			$sourceURL = "http://www.ams.org/mathscinet/search/publications.html?bdlall=Retrieve+First+50&reqargs=pg4%253DMR%2526r%253D1%2526review_format%253Dbibtex%2526s4%253D"
+			  . implode("%2520OR%2520", $pmidArray)
+			  . "1856034%2520OR%2520MR0412083%2526vfpref%253Dbibtex&batch_title=Selected+Matches+for%3A+MR+Number%3D%281856034+OR+MR0412083%29&fmt=bibtex";
+
+			// Perform query:
+			$sourceText .= fetchDataFromURL($sourceURL); // function 'fetchDataFromURL()' is defined in 'include.inc.php'
+		}
+
+		return array($errors, $sourceText);
+	}
+
+	// --------------------------------------------------------------------
+
 	// This function fetches record metadata from arXiv.org for all arXiv IDs
 	// given in '$itemArray':
 	// (for '$sourceFormat', only "arXiv XML", i.e. the arXiv.org Atom XML OpenSearch format,
@@ -3252,7 +3295,7 @@
 		$importDataArray = buildImportArray("refbase", // 'type' - the array format of the 'records' element
 											"1.0", // 'version' - the version of the given array structure
 											"http://refbase.net/import/csa/", // 'creator' - the name of the script/importer (preferably given as unique URI)
-											"Matthias Steffens", // 'author' - author/contact name of the person who's responsible for this script/importer
+											"Mathias Steffens", // 'author' - author/contact name of the person who's responsible for this script/importer
 											"refbase@extracts.de", // 'contact' - author's email/contact address
 											array('prefix_call_number' => "true"), // 'options' - array with settings that control the behaviour of the 'addRecords()' function
 											$parsedRecordsArray); // 'records' - array of record(s) (with each record being a sub-array of fields)

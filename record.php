@@ -599,14 +599,21 @@
 				else
 					$isbnName = "";
 
-				$mediumName = "";
+
+				if (isset($_REQUEST['medium']))
+				  $mediumName = encodeHTML($_REQUEST['medium']);
+				else
+				  $mediumName = "";
 
 				if (isset($_REQUEST['area']))
 					$areaName = encodeHTML($_REQUEST['area']);
 				else
 					$areaName = "";
 
-				$expeditionName = "";
+				if (isset($_REQUEST['expedition']))
+				  $expeditionName = encodeHTML($_REQUEST['expedition']);
+				else
+				  $expeditionName = "";
 
 				if (isset($_REQUEST['conference']))
 					$conferenceName = encodeHTML($_REQUEST['conference']);

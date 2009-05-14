@@ -275,6 +275,9 @@
 //		echo "\n\t<td colspan=\"2\">&nbsp;</td>";
 //	}
 
+	echo "</tr>\n<tr>\n\t<td>&nbsp;</td>\n\t<td>&nbsp;</td>"
+			. "\n<td colspan=\"3\">Global keywords: <input type=\"text\" size=\"42\" name=\"globalKeywords\" title=\"enter any keywords to be applied to all entries (delimited by semi-colons)\"></td>";
+
 	if (isset($_SESSION['user_permissions']) AND ereg("(allow_batch_import)", $_SESSION['user_permissions'])) // if the 'user_permissions' session variable does contain 'allow_batch_import'...
 		echo "\n</tr>";
 
@@ -307,7 +310,10 @@
 
 	echo "\n<table align=\"center\" border=\"0\" cellpadding=\"0\" cellspacing=\"10\" width=\"95%\" summary=\"This table holds a form to import records via their ID\">"
 			. "\n<tr>\n\t<td width=\"94\" valign=\"top\"><b>Import IDs:</b></td>\n\t<td width=\"10\">&nbsp;</td>"
-			. "\n\t<td colspan=\"3\">" . fieldError("sourceIDs", $errors) . $skipBadRecordsInputID . "<input type=\"text\" name=\"sourceIDs\" value=\"$sourceIDs\" size=\"66\" title=\"enter PubMed IDs, arXiv IDs, DOIs or OpenURLs, multiple IDs must be delimited by whitespace\"></td>"
+			. "\n\t<td colspan=\"3\">" . fieldError("sourceIDs", $errors) . $skipBadRecordsInputID . "<input type=\"text\" name=\"sourceIDs\" value=\"$sourceIDs\" size=\"66\" title=\"enter PubMed IDs, arXiv IDs, DOIs, MR numbers, or OpenURLs, multiple IDs must be delimited by whitespace\"></td>"
+			. "\n</tr>"
+			. "\n<tr>\n\t<td>&nbsp;</td>\n\t<td>&nbsp;</td>"
+			. "\n<td colspan=\"3\">Global keywords: <input type=\"text\" size=\"53\" name=\"globalKeywords\" title=\"enter any keywords to be applied to all entries (delimited by semi-colons)\"></td>"
 			. "\n</tr>"
 			. "\n<tr>\n\t<td>&nbsp;</td>\n\t<td>&nbsp;</td>"
 			. "\n\t<td colspan=\"3\">\n\t\t<input type=\"submit\" name=\"submit\" value=\"Import\"$importButtonLock title=\"$importTitleID\">\n\t</td>"
@@ -331,7 +337,7 @@
 			. " Please see the <a href=\"http://import.refbase.net/\" target=\"top\">refbase online documentation</a> for more information about the supported formats and any requirements in format structure.</td>"
 			. "\n</tr>"
 			. "\n<tr>\n\t<td>&nbsp;</td>\n\t<td>&nbsp;</td>"
-			. "\n\t<td colspan=\"3\">The lower form allows you to import records via their ID; supported IDs: <a href=\"http://www.pubmed.gov/\" target=\"top\">PubMed</a> <a href=\"http://en.wikipedia.org/wiki/PMID\" target=\"top\">ID (PMID)</a>, <a href=\"http://arxiv.org/\" target=\"top\">arXiv</a> <a href=\"http://arxiv.org/help/arxiv_identifier\" target=\"top\">ID</a>, <a href=\"http://www.doi.org/\" target=\"top\">DOI</a> and <a href=\"http://en.wikipedia.org/wiki/OpenURL\" target=\"top\">OpenURL</a>. Just enter one or more IDs (delimited by whitespace) and press the <em>Import</em> button. Please note that currently you cannot mix different IDs within the same import action, i.e. specify either PubMed IDs or DOIs, etc.</td>"
+			. "\n\t<td colspan=\"3\">The lower form allows you to import records via their ID; supported IDs: <a href=\"http://www.pubmed.gov/\" target=\"top\">PubMed</a> <a href=\"http://en.wikipedia.org/wiki/PMID\" target=\"top\">ID (PMID)</a>, <a href=\"http://arxiv.org/\" target=\"top\">arXiv</a> <a href=\"http://arxiv.org/help/arxiv_identifier\" target=\"top\">ID</a>, <a href=\"http://www.doi.org/\" target=\"top\">DOI</a>, <a href=\"http://www.ams.org/mathscinet\">MathSciNet</a> (MR number preceeded by the letters 'MR'), and <a href=\"http://en.wikipedia.org/wiki/OpenURL\" target=\"top\">OpenURL</a>. Just enter one or more IDs (delimited by whitespace) and press the <em>Import</em> button. Please note that currently you cannot mix different IDs within the same import action, i.e. specify either PubMed IDs or DOIs, etc.</td>"
 			. "\n</tr>"
 			. "\n</table>"
 			. "\n</form>";

@@ -184,6 +184,13 @@
 
 			&nbsp;|&nbsp;<a href="import.php"<?php echo addAccessKey("attribute", "import"); ?> title="<?php echo $loc["LinkTitle_Import"] . addAccessKey("title", "import"); ?>"><?php echo $loc["Import"]; ?></a><?php
 		}
+		if (isset($_SESSION['user_permissions']) AND ereg("(allow_import|allow_batch_import)", $_SESSION['user_permissions'])) // if the 'user_permissions' session variable contains either 'allow_import' or 'allow_batch_import'...
+		{
+		// ... include a link to 'import.php':
+?>
+
+			&nbsp;|&nbsp;<a href="arxiv.php"<?php echo addAccessKey("attribute", "import"); ?> title="<?php echo $loc["LinkTitle_arXiv"] . addAccessKey("title", "import"); ?>"><?php echo $loc["arXiv"]; ?></a><?php
+		}
 
 		// -------------------------------------------------------
 ?>
