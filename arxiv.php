@@ -152,11 +152,124 @@ else
 displayHTMLhead(encodeHTML($officialDatabaseName) . $pageTitle, "index,follow", "Import records into the " . encodeHTML($officialDatabaseName), "", false, "", $viewType, array());
 showPageHeader($HeaderString);
 
+$arxivNamespace = 'http://arxiv.org/schemas/atom';
+
+// Didn't seem to work when embedded into an extension of the SimplePie class
+
+// this is for sorting the 'new submissions' for the current day
+function arxiv_sort($a,$b)
+  {
+    $status[''] = 0;
+    $status['CROSS LISTED'] = 1;
+    $status['UPDATED'] = 2;
+
+    $astatus = preg_replace('#.*\]\s*([A-Z ]*)\s*\)$#','$1',$a->get_title());
+    $bstatus = preg_replace('#.*\]\s*([A-Z ]*)\s*\)$#','$1',$b->get_title());
+
+    if ($astatus != $bstatus) {
+      return $status[$astatus] >= $status[$bstatus];
+    } else {
+      $aid = preg_replace('#^http://arxiv.org/abs/#','',$a->get_link());
+      $bid = preg_replace('#^http://arxiv.org/abs/#','',$b->get_link());
+
+      return $aid >= $bid;
+    }
+
+  }
+
+// this is for sorting the output of the API
+function arxiv_sort_date($a,$b)
+{
+  global $arxivNamespace;
+
+  $pacat = $a->get_item_tags($arxivNamespace, 'primary_category');
+  $pbcat = $b->get_item_tags($arxivNamespace, 'primary_category');
+
+  $acat = $pacat[0]["attribs"][""]["term"];
+  $bcat = $pbcat[0]["attribs"][""]["term"];
+
+  // if exactly _one_ of acat and bcat is math, that wins
+  if ((strpos($acat,"math") === 0) and (strpos($bcat,"math") !== 0))
+    {
+      // $a preceeds $b
+      return -1;
+    }
+  elseif  ((strpos($acat,"math") !== 0) and (strpos($bcat,"math") === 0))
+    {
+      // $b preceeds $a
+      return 1;
+    }
+  else
+    {
+      // either both are math or both are not math
+      // order by arxiv ID
+      // (note: at the moment, on earlier IDs this will not be quite right)
+      $aid = preg_replace('#^http://arxiv.org/abs/#','',$a->get_link());
+      $bid = preg_replace('#^http://arxiv.org/abs/#','',$b->get_link());
+      
+      return $aid >= $bid;
+    }
+}
+
+
+// defaults:
+$catchup = 0;
+$url = "http://arxiv.org/rss/math?version=2.0";
+$sort_method = 'arxiv_sort';
+
+if (isset($formVars['date']))
+  {
+    // date was specified, try to parse it.
+    $date = new DateTime($formVars['date']);
+    if ($date)
+      {
+	// try to work out what the catch-up link would give
+	// that day's announcement is the previous day's submissions
+	// with the modification that weekends are subsummed into monday
+	$day = $date->format('w');
+	if ($day === 0)
+	  $date->modify("+1 day");
+	if ($day === 6)
+	  $date->modify("+2 days");
+	// $date now points to a weekday no earlier than the given date
+	$enddate = clone $date;
+	$enddate->modify("-1 day");
+	$endday = $enddate->format('w');
+	if ($endday === 0)
+	  $enddate->modify("-2 days");
+	if ($endday === 6)
+	  $enddate->modify("-1 day");
+	// $enddate now points to the previous weekday
+	$startdate = clone $enddate;
+	$startdate->modify("-1 day");
+	$startday = $startdate->format('w');
+	if ($startday === 0)
+	  $startdate->modify("-2 days");
+	if ($startday === 6)
+	  $startdate->modify("-1 day");
+	// $startdate now points to the weekday before $enddate
+
+	$arxivTitle = "Catch-up for arXiv Submissions";
+	$sort_method = 'arxiv_sort_date';
+	$arxivDate = $date->format('D, d M Y');
+
+	$catchup = 1;
+
+	$url = "http://export.arxiv.org/api/query?search_query=submittedDate:["
+	  . $startdate->format('Ymd')
+	  . "0630+TO+"
+	  . $enddate->format('Ymd') 
+	  . "0630]"
+	  . "&start=0&max_results=500";
+      }
+
+  }
 
 $arxivfeed = new SimplePie();
-$arxivfeed->set_feed_url("http://arxiv.org/rss/math?version=2.0");
+$arxivfeed->set_feed_url($url);
 //$arxivfeed->set_feed_url("http://www.math.ntnu.no/~stacey/arxiv_test");
 $arxivfeed->set_input_encoding('UTF-8');
+$arxivfeed->set_output_encoding('ISO-8859-1');
 $arxivfeed->enable_cache(true);
 // Cache is located in the same directory as this file
 $arxivfeed->set_cache_location('/amd/abel/home/www/stacey/RefBase/Cache');
@@ -166,24 +279,26 @@ $arxivfeed->init();
 
 //$atomNamespace = 'http://www.w3.org/2005/Atom';
 //$opensearchNamespace = 'http://a9.com/-/spec/opensearch/1.1/';
-//$arxivNamespace = 'http://arxiv.org/schemas/atom';
 
 $arxivArray = $arxivfeed->get_items();
+usort($arxivArray, $sort_method);
 $arxivCount = count($arxivArray);
 
 print "<div id=\"arxiv\">\n";
 
-
-$arxivChannel = $arxivfeed->get_feed_tags('', 'channel');
-$arxivDate = $arxivChannel[0]['child']['']['pubDate']['0']['data'];
-$arxivTitle = $arxivChannel[0]['child']['']['title']['0']['data'];
+if (!$catchup)
+  {
+    $arxivChannel = $arxivfeed->get_feed_tags('', 'channel');
+    $arxivDate = $arxivChannel[0]['child']['']['pubDate']['0']['data'];
+    $arxivTitle = $arxivChannel[0]['child']['']['title']['0']['data'];
+  }
 
 print "<h2>$arxivTitle</h2>\n";
 print "Published on: <i>$arxivDate</i>\n";
 
 print "<dl>\n";
 
-// if (isset($_SESSION['user_permissions']) AND ereg("(allow_batch_import)", $_SESSION['user_permissions'])) // if the 'user_permissions' session variable does contain 'allow_batch_import'...
+if (isset($_SESSION['user_permissions']) AND ereg("(allow_batch_import)", $_SESSION['user_permissions'])) // if the 'user_permissions' session variable does contain 'allow_batch_import'...
 {
   print "<form action=\"arxiv.php\" method=\"POST\">\n"
   . "<input type=\"submit\" name=\"submit\" value=\"Import\" title=\"Press this button to import the selected records into the database.\">\n";
@@ -206,12 +321,50 @@ for($i = 0; $i < $arxivCount; $i++)
     $article=$arxivArray[$i];
     $link=$article->get_link();
     $id = preg_replace('#^http://arxiv.org/abs/#','',$link);
-    $longtitle =$article->get_title();
-    $description=$article->get_description();
 
-    $title = preg_replace('#\s*\([^\)]*\)$#','',$longtitle);
-    $subject = preg_replace('#.*\[(.*)\]\s*[A-Z ]*\s*\)$#','$1',$longtitle);
-    $status = preg_replace('#.*\]\s*([A-Z ]*)\s*\)$#','$1',$longtitle);
+    if ($catchup)
+      {
+	$ismath = 0;
+	foreach ($article->get_categories() as $cat)
+	  {
+	    if (strpos($cat->get_term(),"math") === 0)
+	      {
+		$ismath = 1;
+		break;
+	      }
+	  }
+	if (!$ismath)
+	  continue;
+	$num++;
+	$status = "";
+	$title = $article->get_title();
+	$primcat = $article->get_item_tags($arxivNamespace, 'primary_category');
+	$subject = $primcat[0]["attribs"][""]["term"];
+	if (strpos($subject,"math") !== 0)
+	  $status = "CROSS LISTED";
+	$abstract = '<p>' . $article->get_description() . '</p>';
+	$authors = "";
+	foreach ($article->get_authors() as $author)
+	  {
+	    if ($authors)
+	      $authors .= " and ";
+	    $authors .= $author->get_name();
+	  }
+	$id = preg_replace('/v\d+$/','',$id);
+      }
+    else
+      {
+	$longtitle =$article->get_title();
+	$description=$article->get_description();
+
+	$title = preg_replace('#\s*\([^\)]*\)$#','',$longtitle);
+	$subject = preg_replace('#.*\[(.*)\]\s*[A-Z ]*\s*\)$#','$1',$longtitle);
+	$status = preg_replace('#.*\]\s*([A-Z ]*)\s*\)$#','$1',$longtitle);
+	$desc = explode('</p>',$description,2);
+	$authors = preg_replace('#<p>Authors:\s*#','',$desc[0]);
+	$abstract = $desc[1];
+	$num = $i + 1;
+      }
 
     if ($status == "UPDATED") 
       {
@@ -225,12 +378,9 @@ for($i = 0; $i < $arxivCount; $i++)
       $cross=1;
       }
 
-    $desc = explode('</p>',$description,2);
-    $authors = preg_replace('#<p>Authors:\s*#','',$desc[0]);
-
     print "<dt>";
 
-    //    if (isset($_SESSION['user_permissions']) AND ereg("(allow_batch_import)", $_SESSION['user_permissions'])) // if the 'user_permissions' session variable does contain 'allow_batch_import'...
+    if (isset($_SESSION['user_permissions']) AND ereg("(allow_batch_import)", $_SESSION['user_permissions'])) // if the 'user_permissions' session variable does contain 'allow_batch_import'...
       {
 	print "<input type=\"radio\" name=\"arXivImport"
 	  . $id
@@ -245,7 +395,7 @@ for($i = 0; $i < $arxivCount; $i++)
       }
 
     print "["
-      . ($i + 1)
+      . $num
       . "]"
       . "&nbsp;<span class=\"list-identifier\"><a href=\""
       . $link
@@ -282,9 +432,9 @@ for($i = 0; $i < $arxivCount; $i++)
 
     print '</div>';
 
-    print $desc[1];
+    print $abstract;
 
-    //    if (isset($_SESSION['user_permissions']) AND ereg("(allow_batch_import)", $_SESSION['user_permissions'])) // if the 'user_permissions' session variable does contain 'allow_batch_import'...
+    if (isset($_SESSION['user_permissions']) AND ereg("(allow_batch_import)", $_SESSION['user_permissions'])) // if the 'user_permissions' session variable does contain 'allow_batch_import'...
       print "Keywords:&nbsp;"
 	. "<input type=\"text\" name=\""
 	. $id
@@ -298,78 +448,89 @@ for($i = 0; $i < $arxivCount; $i++)
 
   }
 
-// if (isset($_SESSION['user_permissions']) AND ereg("(allow_batch_import)", $_SESSION['user_permissions'])) // if the 'user_permissions' session variable does contain 'allow_batch_import'...
+if (isset($_SESSION['user_permissions']) AND ereg("(allow_batch_import)", $_SESSION['user_permissions'])) // if the 'user_permissions' session variable does contain 'allow_batch_import'...
   print "<input type=\"submit\" name=\"submit\" value=\"Import\" title=\"Press this button to import the selected records into the database.\">\n</form>";
 
-print '<h3>Updates</h3>';
+
+if (!$catchup)
+  {
+    print '<h3>Updates</h3>';
+
+    if ($updates)
+      {
+	connectToMySQLDatabase();
+
+	$query = "SELECT summary_language,title,serial FROM $tableRefs WHERE summary_language RLIKE \"" . implode("\" OR summary_language RLIKE \"",$updates) . "\"";
+	
+	$result = queryMySQLDatabase($query);
+
+	$rowsFound = @ mysql_num_rows($result);
+
+	if ($rowsFound)
+	  {
+	    print '<p>The following record';
+	    if ($rowsFound == 1) 
+	      {
+		print ' has an update ';
+	      }
+	    else
+	      {
+		print 's have updates ';
+	      }
+	    print 'on the arXiv.</p>';
+
+	    for ($i = 0; $i<$rowsFound; $i++) {
+	      $row = mysql_fetch_array($result);
 
 
-connectToMySQLDatabase();
+	      print "<dt><span class=\"list-identifier\"><a href=\""
+		. $row['summary_language']
+		. "\" title=\"Abstract\">"
+		. $row['summary_language']
+		. "</a> [<a href=\"http://arxiv.org/ps/"
+		. $row['summary_language']
+		. "\" title=\"Download PostScript\">ps</a>, <a href=\"http://arxiv.org/pdf/"
+		. $row['summary_language']
+		. "\" title=\"Download PDF\">pdf</a>, <a href=\"http://arxiv.org/format/"
+		. $row['summary_language']
+		. "\" title=\"Other formats\">other</a>, <a href=\"http://www.math.ntnu.no/~stacey/RefBase/show.php?record="
+		. $row['serial']
+		. "\">local record</a>]</span></dt>\n";
 
-$query = "SELECT summary_language,title,serial FROM $tableRefs WHERE summary_language RLIKE \"" . implode("\" OR summary_language RLIKE \"",$updates) . "\"";
-
-$result = queryMySQLDatabase($query);
-
-$rowsFound = @ mysql_num_rows($result);
-
-if ($rowsFound) {
-  print '<p>The following record';
-  if ($rowsFound == 1) 
-    {
-      print ' has an update ';
-    }
-  else
-    {
-      print 's have updates ';
-    }
-  print 'on the arXiv.</p>';
-
-  for ($i = 0; $i<$rowsFound; $i++) {
-    $row = mysql_fetch_array($result);
-
-
-    print "<dt><span class=\"list-identifier\"><a href=\""
-      . $row['summary_language']
-      . "\" title=\"Abstract\">"
-      . $row['summary_language']
-      . "</a> [<a href=\"http://arxiv.org/ps/"
-      . $row['summary_language']
-      . "\" title=\"Download PostScript\">ps</a>, <a href=\"http://arxiv.org/pdf/"
-      . $row['summary_language']
-      . "\" title=\"Download PDF\">pdf</a>, <a href=\"http://arxiv.org/format/"
-      . $row['summary_language']
-      . "\" title=\"Other formats\">other</a>, <a href=\"http://www.math.ntnu.no/~stacey/RefBase/show.php?record="
-      . $row['serial']
-      . "\">local record</a>]</span></dt>\n";
-
-    print '<dd>
+	      print '<dd>
 <div class="meta">
 <div class="list-title">
 <span class="descriptor">Title:</span>';
     
-    print $row['title'];
+	      print $row['title'];
 
-    print '</div></div>
+	      print '</div></div>
 </dd>';
-
-  }
-}
-else
-  {
-    print 'No records currently in the database were updated yesterday on the arXiv.';
-  }
-
+	      
+	    }
+	  }
+	else
+	  {
+	    print 'No records currently in the database were updated yesterday on the arXiv.';
+	  }
+      }
+  }    
 print '</dl>';
 print '</div>';
+    
+ 
 
+// --------------------------------------------------------------------
+
+// DISPLAY THE HTML FOOTER:
+// call the 'showPageFooter()' and 'displayHTMLfoot()' functions (which are defined in 'footer.inc.php')
+showPageFooter($HeaderString);
+
+displayHTMLfoot();
+
+// --------------------------------------------------------------------
+// TODO:
+//  1. Add a form to select date
+//  2. Add a highlighting facility: to highlight entries that match a given search and to highlight entries already in the database.
   }
-	// --------------------------------------------------------------------
-
-	// DISPLAY THE HTML FOOTER:
-	// call the 'showPageFooter()' and 'displayHTMLfoot()' functions (which are defined in 'footer.inc.php')
-	showPageFooter($HeaderString);
-
-	displayHTMLfoot();
-
-	// --------------------------------------------------------------------
 ?>

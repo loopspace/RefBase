@@ -352,8 +352,36 @@
 		// - MathSciNet MRs:
 		if (eregi("^MathSciNet$", $sourceFormat) AND ereg("[0-9]", $sourceIDs))
 		{
-			// Split on any whitespace between PubMed IDs:
+			// Split on any whitespace between MathSciNet IDs:
 			$idArray = preg_split("/\s+/", $sourceIDs, -1, PREG_SPLIT_NO_EMPTY);
+			// Check for records already in database
+			// This could be a function given that it only differs by field name from type to type
+			$regexp = implode("|",$idArray);
+			connectToMySQLDatabase();
+			$query = "SELECT serial, expedition FROM "
+			  . $tableRefs
+			  . " WHERE expedition RLIKE \""
+			  . $regexp
+			  . "\"";
+
+			$result = queryMySQLDatabase($query); // RUN the query on the database through the connection (function 'queryMySQLDatabase()' is defined in 'include.inc.php')
+			$inDatabase = array();
+
+			if (@ mysql_num_rows($result) > 0) // if there were rows found ...
+			  {
+			    // Loop over each row in the result set:
+			    for ($rowCounter=0; $row = @ mysql_fetch_array($result); $rowCounter++)
+			      {
+				// find out what it was that matched
+				preg_match('/' . $regexp . '/',$row["expedition"],$matches);
+				// add matched record to the list of records already in database
+				$inDatabase[$matches[0]] = $row["serial"];
+				// remove from list to get from MathSciNet
+				unset($idArray[array_search($matches[0],$idArray)]);
+			      }
+			  }
+
+			disconnectFromMySQLDatabase();
 
 			// Fetch source data from MathSciNet for all given MathSciNet IDs:
 			list($errors, $sourceText) = fetchDataFromMathSciNet($idArray, $sourceFormat); // function 'fetchDataFromMathSciNet()' is defined in 'import.inc.php'
@@ -366,6 +394,33 @@
 			$sourceIDs = preg_replace("#(?<=^|\s)(arXiv:|http://arxiv\.org/abs/)#", "", $sourceIDs);
 			// Split on any whitespace between arXiv IDs:
 			$idArray = preg_split("/\s+/", $sourceIDs, -1, PREG_SPLIT_NO_EMPTY);
+			// Check for records already in database
+			$regexp = implode("|",$idArray);
+			connectToMySQLDatabase();
+			$query = "SELECT serial, summary_language FROM "
+			  . $tableRefs
+			  . " WHERE summary_language RLIKE \""
+			  . $regexp
+			  . "\"";
+
+			$result = queryMySQLDatabase($query); // RUN the query on the database through the connection (function 'queryMySQLDatabase()' is defined in 'include.inc.php')
+			$inDatabase = array();
+
+			if (@ mysql_num_rows($result) > 0) // if there were rows found ...
+			  {
+			    // Loop over each row in the result set:
+			    for ($rowCounter=0; $row = @ mysql_fetch_array($result); $rowCounter++)
+			      {
+				// find out what it was that matched
+				preg_match('/' . $regexp . '/',$row["summary_language"],$matches);
+				// add matched record to the list of records already in database
+				$inDatabase[$matches[0]] = $row["serial"];
+				// remove from list to get from MathSciNet
+				unset($idArray[array_search($matches[0],$idArray)]);
+			      }
+			  }
+
+			disconnectFromMySQLDatabase();
 
 			// Fetch source data from arXiv.org for all given arXiv IDs:
 			list($errors, $sourceText) = fetchDataFromArXiv($idArray, $sourceFormat); // function 'fetchDataFromArXiv()' is defined in 'import.inc.php'
@@ -441,6 +496,8 @@
 	// This works, but I'm not happy with the syntax.  The keywords should be specified by a semi-colon-delimited list, each keyword should have an optional first word which identifies a record to apply it to.  However, we need a way to know that the first word is an identifier and not a keyword itself (to allow for cross-referencing).  Also, should an identifier apply to a group of keywords or just to the closest one?  Still not sure how best to use this in practice.
 
         // For each record, add the "globalKeywords" (if specified) to the user's keys
+
+// TODO: add to records already in database but given in import line (serial numbers held in $inDatabase array).
 
 	if (isset($formVars['globalKeywords'])) {
 		$CountOfRecords = count($importDataArray['records']);

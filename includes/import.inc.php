@@ -2787,12 +2787,19 @@
 			// Remove any duplicate IDs:
 			$pmidArray = array_unique($pmidArray);
 
-			$sourceURL = "http://www.ams.org/mathscinet/search/publications.html?bdlall=Retrieve+First+50&reqargs=pg4%253DMR%2526r%253D1%2526review_format%253Dbibtex%2526s4%253D"
-			  . implode("%2520OR%2520", $pmidArray)
-			  . "1856034%2520OR%2520MR0412083%2526vfpref%253Dbibtex&batch_title=Selected+Matches+for%3A+MR+Number%3D%281856034+OR+MR0412083%29&fmt=bibtex";
+			foreach ($pmidArray as $mrnumber)
+			{
+
+			$sourceURL = "http://www.ams.org/mathscinet-getitem?mr="
+			  . $mrnumber
+			  . "&return=bibtex";
 
 			// Perform query:
 			$sourceText .= fetchDataFromURL($sourceURL); // function 'fetchDataFromURL()' is defined in 'include.inc.php'
+
+			// Let's not initiate a DOS
+			sleep(rand(2,4));
+			}
 		}
 
 		return array($errors, $sourceText);
