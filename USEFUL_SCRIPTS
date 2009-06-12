@@ -1,0 +1,4 @@
+# For finding duplicates, export whole database as an SQL dump.
+ 1113* cat stacey_refbase.sql| perl -lne "/(arXiv:[^']*)/ and print \$1;" | sort | uniq -d > refbase_arxiv_dups
+ 1129* cat stacey_refbase.sql| perl -lne "/(MR\d+)/ and print \$1;" | sort | uniq -d  > refbase_mathscinet_dups
+ 1144  cat stacey_refbase.sql| perl -lne 'if (/INSERT INTO/) {/(\(.*\));/; eval("\@a = $1"); ($title = lc($a[5])) =~ s/[^a-z0-9 ]//g; print $title;};' | sort | uniq -d > refbase_title_dups
