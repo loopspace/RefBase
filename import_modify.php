@@ -356,7 +356,12 @@
 			$idArray = preg_split("/\s+/", $sourceIDs, -1, PREG_SPLIT_NO_EMPTY);
 			// Check for records already in database
 			// This could be a function given that it only differs by field name from type to type
-			$regexp = implode("|",$idArray);
+			$regexp = "";
+			foreach ($idArray as $id)
+			{
+				$regexp .= "|" . preg_quote($id,"/");
+			}
+			$regexp = substr($regexp,1);
 			connectToMySQLDatabase();
 			$query = "SELECT serial, expedition FROM "
 			  . $tableRefs
@@ -381,8 +386,6 @@
 			      }
 			  }
 
-			disconnectFromMySQLDatabase();
-
 			// Fetch source data from MathSciNet for all given MathSciNet IDs:
 			list($errors, $sourceText) = fetchDataFromMathSciNet($idArray, $sourceFormat); // function 'fetchDataFromMathSciNet()' is defined in 'import.inc.php'
 		}
@@ -395,7 +398,12 @@
 			// Split on any whitespace between arXiv IDs:
 			$idArray = preg_split("/\s+/", $sourceIDs, -1, PREG_SPLIT_NO_EMPTY);
 			// Check for records already in database
-			$regexp = implode("|",$idArray);
+			$regexp = "";
+			foreach ($idArray as $id)
+			{
+				$regexp .= "|" . preg_quote($id,"/");
+			}
+			$regexp = substr($regexp,1);
 			connectToMySQLDatabase();
 			$query = "SELECT serial, summary_language FROM "
 			  . $tableRefs
@@ -419,8 +427,6 @@
 				unset($idArray[array_search($matches[0],$idArray)]);
 			      }
 			  }
-
-			disconnectFromMySQLDatabase();
 
 			// Fetch source data from arXiv.org for all given arXiv IDs:
 			list($errors, $sourceText) = fetchDataFromArXiv($idArray, $sourceFormat); // function 'fetchDataFromArXiv()' is defined in 'import.inc.php'
