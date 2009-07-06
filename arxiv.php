@@ -221,48 +221,164 @@ if (isset($formVars['date']))
   {
     // date was specified, try to parse it.
     $date = new DateTime($formVars['date']);
+    $arxiv_tz = new DateTimeZone('America/New_York');
+    $gmt = new DateTimeZone('GMT');
+    // submission times are determined by local time
+    $date->setTimezone($arxiv_tz);
+    $date->setTime(16,00,00);
+    // but api responses are determined by GMT/UTC
+    $date->setTimezone($gmt);
     if ($date)
       {
 	// try to work out what the catch-up link would give
 	// that day's announcement is the previous day's submissions
 	// with the modification that weekends are subsummed into monday
 	$day = $date->format('w');
-	if ($day === 0)
+	if ($day === "0")
 	  $date->modify("+1 day");
-	if ($day === 6)
+	if ($day === "6")
 	  $date->modify("+2 days");
 	// $date now points to a weekday no earlier than the given date
 	$enddate = clone $date;
 	$enddate->modify("-1 day");
 	$endday = $enddate->format('w');
-	if ($endday === 0)
+	if ($endday === "0")
 	  $enddate->modify("-2 days");
-	if ($endday === 6)
+	if ($endday === "6")
 	  $enddate->modify("-1 day");
 	// $enddate now points to the previous weekday
 	$startdate = clone $enddate;
 	$startdate->modify("-1 day");
 	$startday = $startdate->format('w');
-	if ($startday === 0)
+	if ($startday === "0")
 	  $startdate->modify("-2 days");
-	if ($startday === 6)
+	if ($startday === "6")
 	  $startdate->modify("-1 day");
 	// $startdate now points to the weekday before $enddate
 
 	$arxivTitle = "Catch-up for arXiv Submissions";
 	$sort_method = 'arxiv_sort_date';
-	$arxivDate = $date->format('D, d M Y');
+	$arxivDate = $date->format('D, d M Y')
+	  . ' (Submitted between '
+	  . $startdate->format('D, d M Y Hi (T)')
+	  . " and "
+	  . $enddate->format('D, d M Y Hi (T)') 
+	  . ')';
 
 	$catchup = 1;
 
 	$url = "http://export.arxiv.org/api/query?search_query=submittedDate:["
-	  . $startdate->format('Ymd')
-	  . "0630+TO+"
-	  . $enddate->format('Ymd') 
-	  . "0630]"
+	  . $startdate->format('YmdHi')
+	  . "+TO+"
+	  . $enddate->format('YmdHi') 
+	  . "]"
 	  . "&start=0&max_results=500";
       }
 
+  }
+else
+  {
+    $date = new DateTime();
+  }
+
+$now = new DateTime();
+$now->setTimezone($arxiv_tz);
+$now->setTime(16,00,00);
+$nowsec = $now->format('U');
+
+// which dates to offer?
+$date_options = array(
+		      "-1 month",
+		      "-2 weeks",
+		      "-1 week",
+		      "-2 days",
+		      "-1 day",
+		      "+1 day",
+		      "+2 days",
+		      "+1 week",
+		      "+2 weeks",
+		      "+1 month",
+		      );
+
+$date_opts_count = count($date_options);
+
+$date_form = '<p><form action="'
+  . $_SERVER['PHP_SELF']
+  . '" method="post">'
+  . '<input type="submit" name="dateSubmit" value="Skip to:" />'
+  . '<select name="date">';
+
+// comparing dates is not yet available in this version of php
+$datesec = $date->format('U');
+
+for ($i = 0; $i < $date_opts_count; ++$i)
+  {
+    $thisdate = clone $date;
+    $thisdate->modify($date_options[$i]);
+    $thisday = $thisdate->format('w');
+    $thissec = $thisdate->format('U');
+    if ($thisday === "0")
+      {
+	if ($thissec > $datesec)
+	  {
+	    $thisdate->modify("+1 day");
+	  }
+	else
+	  {
+	    $thisdate->modify("-2 days");
+	  }
+      }
+    if ($thisday === "6")
+      {
+	if ($thissec > $datesec)
+	  {
+	    $thisdate->modify("+2 day");
+	  }
+	else
+	  {
+	    $thisdate->modify("-1 days");
+	  }
+      }
+
+    if ($thisdate->format('U') <= $nowsec)
+      {
+	$date_form .= '<option value="'
+	  . $thisdate->format('c')
+	  . '">'
+	  . $thisdate->format('D, d M Y')
+	  . ' (c. '
+	  . $date_options[$i]
+	  . ')'
+	  . '</option>'
+	  . "\n";
+      }
+  }
+
+
+$date_form .= '</select></form>'
+  . "\n Or "
+  . '<form action="'
+  . $_SERVER['PHP_SELF']
+  . '" method="post">'
+  . '<input type="submit" name="dateSubmit" value="Select date:" /><input type="text" name="date" title="Enter date to skip to (in a reasonable format)" size="30" /></form></p>';
+
+$tomorrow = clone $date;
+$tomorrow->modify("+1 day");
+$tomorrowday = $tomorrow->format('w');
+if ($tomorrowday === "0")
+  $tomorrow->modify("+1 day");
+if ($tomorrowday === "6")
+  $tomorrow->modify("+2 days");
+
+$next_form = "";
+if ($tomorrow->format('U') <= $nowsec)
+  {
+    $next_form = '<form action="'
+      . $_SERVER['PHP_SELF']
+      . '" method="post">'
+      . '<button type="submit" name="date" value="'
+      . $tomorrow->format('c')
+      . '">Tomorrow (ish)</button></form>';
   }
 
 $arxivfeed = new SimplePie();
@@ -295,6 +411,8 @@ if (!$catchup)
 
 print "<h2>$arxivTitle</h2>\n";
 print "Published on: <i>$arxivDate</i>\n";
+
+print $date_form;
 
 print "<dl>\n";
 
@@ -516,6 +634,9 @@ if (!$catchup)
       }
   }    
 print '</dl>';
+
+print $next_form;
+
 print '</div>';
     
  
