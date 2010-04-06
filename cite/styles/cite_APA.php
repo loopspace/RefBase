@@ -61,7 +61,7 @@
 						//  15. output: string that's appended to the number of authors given in (14) if the total number of authors is greater than the number given in (13); the actual number of authors can be printed by including '__NUMBER_OF_AUTHORS__' (without quotes) within the string
 						//
 						//  16. output: boolean value that specifies whether the re-ordered string shall be returned with higher ASCII chars HTML encoded
-						$author = reArrangeAuthorContents($row['author'], // 1.
+						$author = reArrangeAuthorContents(strip_tags($row['author']), // 1.  strip_tags added to avoid hyperlinks causing problems
 						                                  true, // 2.
 						                                  " *; *", // 3.
 						                                  ", ", // 4.
@@ -223,7 +223,7 @@
 						//  15. output: string that's appended to the number of authors given in (14) if the total number of authors is greater than the number given in (13); the actual number of authors can be printed by including '__NUMBER_OF_AUTHORS__' (without quotes) within the string
 						//
 						//  16. output: boolean value that specifies whether the re-ordered string shall be returned with higher ASCII chars HTML encoded
-						$author = reArrangeAuthorContents($row['author'], // 1.
+						$author = reArrangeAuthorContents(strip_tags($row['author']), // 1.
 						                                  true, // 2.
 						                                  " *; *", // 3.
 						                                  ", ", // 4.
@@ -291,7 +291,7 @@
 						//  15. output: string that's appended to the number of authors given in (14) if the total number of authors is greater than the number given in (13); the actual number of authors can be printed by including '__NUMBER_OF_AUTHORS__' (without quotes) within the string
 						//
 						//  16. output: boolean value that specifies whether the re-ordered string shall be returned with higher ASCII chars HTML encoded
-						$editor = reArrangeAuthorContents($row['editor'], // 1.
+						$editor = reArrangeAuthorContents(strip_tags($row['editor']), // 1.
 						                                  true, // 2.
 						                                  " *; *", // 3.
 						                                  ", ", // 4.
@@ -440,7 +440,7 @@
 						//  15. output: string that's appended to the number of authors given in (14) if the total number of authors is greater than the number given in (13); the actual number of authors can be printed by including '__NUMBER_OF_AUTHORS__' (without quotes) within the string
 						//
 						//  16. output: boolean value that specifies whether the re-ordered string shall be returned with higher ASCII chars HTML encoded
-						$author = reArrangeAuthorContents($author, // 1.
+						$author = reArrangeAuthorContents(strip_tags($author), // 1.
 						                                  true, // 2.
 						                                  " *; *", // 3.
 						                                  ", ", // 4.
@@ -514,7 +514,7 @@
 						//  15. output: string that's appended to the number of authors given in (14) if the total number of authors is greater than the number given in (13); the actual number of authors can be printed by including '__NUMBER_OF_AUTHORS__' (without quotes) within the string
 						//
 						//  16. output: boolean value that specifies whether the re-ordered string shall be returned with higher ASCII chars HTML encoded
-						$editor = reArrangeAuthorContents($row['editor'], // 1.
+						$editor = reArrangeAuthorContents(strip_tags($row['editor']), // 1.
 						                                  true, // 2.
 						                                  " *; *", // 3.
 						                                  ", ", // 4.

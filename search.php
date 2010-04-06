@@ -832,7 +832,6 @@
 			showPageHeader($HeaderString);
 	}
 
-
 	// (4b) DISPLAY results:
 	if ($displayType == "Display") // display full record details (Details view)
 		displayDetails($result, $rowsFound, $query, $queryURL, $showQuery, $showLinks, $rowOffset, $showRows, $previousOffset, $nextOffset, $wrapResults, $nothingChecked, $citeStyle, $citeOrder, $orderBy, $showMaxRow, $headerMsg, $userID, $displayType, $viewType, $addCounterMax, $formType);
@@ -1537,7 +1536,23 @@
 												if (!empty($row["doi"]))
 													$linkArray[] = "\n\t\t<a href=\"http://dx.doi.org/" . rawurlencode($row["doi"]) . "\"><img src=\"" . $baseURL . "img/doi.gif\" alt=\"" . $loc["doi"] . "\" title=\"" . $loc["LinkTitle_GotoWebPageViaDOI"] . "\" width=\"17\" height=\"20\" hspace=\"0\" border=\"0\"></a>";
 
-												// generate a link from the RELATED field:
+												if (!empty($row["summary_language"]))
+												  {
+												    // Got an arXiv id, now extract the main bit
+												    $arXivID = $row["summary_language"];
+												    $arXivID = preg_replace('/arxiv:/i','',$arXivID);
+												    $linkArray[] = "\n\t\t<a href=\"http://arxiv.org/abs/" . rawurlencode($arXivID) . "\"><img src=\"" . $baseURL . "img/arxiv.png\" alt=\"" . $arXivID . "\" title=\"Goto arXiv page\" width=\"17\" height=\"20\" hspace=\"0\" border=\"0\"></a>";
+												  }
+
+												if (!empty($row["expedition"]))
+												  {
+												    // Got an MR number
+
+												    $MRID = $row["expedition"];
+												    $MRID = preg_replace('/MR(\d+).*/i','$1',$MRID);
+												    $linkArray[] = "\n\t\t<a href=\"http://www.ams.org/mathscinet-getitem?mr=" . rawurlencode($MRID) . "\"><img src=\"" . $baseURL . "img/ams.png\" alt=\"" . $MRID . "\" title=\"Goto MathSciNet page\" width=\"17\" height=\"20\" hspace=\"0\" border=\"0\"></a>";
+												  }
+												    // generate a link from the RELATED field:
 												if (isset($_SESSION['loginEmail'])) // if a user is logged in, show a link to any related records (if available):
 												{
 													if (!empty($row["related"]))

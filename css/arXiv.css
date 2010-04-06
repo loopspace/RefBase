@@ -1,0 +1,62 @@
+/****************************************
+ * arXiv.org Cascading Style Sheet
+ * $Date: 2009/01/23 22:24:28 $
+ ****************************************/
+
+/****************************************
+ * DL-list styles (/list/arch-ive/new|recent, search)
+ ****************************************/
+
+#dlpage .list-dateline {
+  font-style: italic;
+  }
+
+#dlpage arxiv-dd {
+  padding-bottom: 1em;
+  }
+
+#dlpage .arxiv-meta {
+  line-height: 130%;
+  }
+
+#dlpage .arxiv-list-identifier {
+  font-weight: bold;
+    }
+
+#dlpage .arxiv-descriptor {
+  display: inline;
+  }
+
+#dlpage .arxiv-list-authors .arxiv-descriptor {
+  display: none;
+  }
+
+#dlpage .arxiv-list-title .arxiv-descriptor {
+  display: none;
+  }
+
+#dlpage .arxiv-list-title {
+  font-size: large;
+  font-weight: bold;
+  margin: .25em 0 0 0;
+  line-height: 120%;
+  }
+
+#dlpage .arxiv-list-authors {
+  font-weight: normal;
+  font-size: 110%;
+  }
+
+#dlpage .arxiv-list-comments {
+  font-weight: normal;
+  font-size: 90%;
+  }
+
+#dlpage .arxiv-list-journal-ref {
+  font-weight: normal;
+  font-size: 90%;
+  }
+
+#dlpage .arxiv-list-subjects {
+  font-size: 90%;
+  }

@@ -111,7 +111,7 @@ showLogin(); // (function 'showLogin()' is defined in 'include.inc.php')
 
 if (isset($formVars['submit']))
   {
-
+    $keywords = array();
     // Loop through twice to make sure we know the ids before we assign the keywords, just in case the user_agent mucks up the order
     foreach ($formVars as $varname => $value)
       {
@@ -135,9 +135,12 @@ if (isset($formVars['submit']))
 		      'formType' => 'importID',
 		      'submit '=> 'Import',
 		      'sourceIDs' => implode(" ", $ids),
-		      'Keywords' => implode(";", $keywords),
 		      'showSource' => '1'
 		      );
+
+    if (count($keywords) > 0) 
+      $postData['Keywords'] = implode(";", $keywords);
+
 
     saveSessionVariable("formVars", $postData);
 
@@ -216,13 +219,14 @@ function arxiv_sort_date($a,$b)
 $catchup = 0;
 $url = "http://arxiv.org/rss/math?version=2.0";
 $sort_method = 'arxiv_sort';
+$arxiv_tz = new DateTimeZone('America/New_York');
+$gmt = new DateTimeZone('GMT');
+
 
 if (isset($formVars['date']))
   {
     // date was specified, try to parse it.
     $date = new DateTime($formVars['date']);
-    $arxiv_tz = new DateTimeZone('America/New_York');
-    $gmt = new DateTimeZone('GMT');
     // submission times are determined by local time
     $date->setTimezone($arxiv_tz);
     $date->setTime(16,00,00);
@@ -388,7 +392,7 @@ $arxivfeed->set_input_encoding('UTF-8');
 $arxivfeed->set_output_encoding('ISO-8859-1');
 $arxivfeed->enable_cache(true);
 // Cache is located in the same directory as this file
-$arxivfeed->set_cache_location('/amd/abel/home/www/stacey/RefBase/Cache');
+$arxivfeed->set_cache_location('/home/www/stacey/RefBase/Cache');
 $arxivfeed->set_cache_duration(43200); // 12 hours
 $arxivfeed->enable_order_by_date(false);
 $arxivfeed->init();
@@ -399,6 +403,49 @@ $arxivfeed->init();
 $arxivArray = $arxivfeed->get_items();
 usort($arxivArray, $sort_method);
 $arxivCount = count($arxivArray);
+
+print '<script type="text/javascript">
+//<![CDATA[
+var importButtons = [];
+
+function checkChecked() {
+form = document.getElementById("arxivForm");
+if (importButtons.length == 0)
+{
+for (var i = 0; i < form.elements.length; i++)
+{
+if (form.elements[i].type == "submit" && form.elements[i].value == "Import")
+{
+importButtons.push(form.elements[i]);
+}
+}
+}
+if (isOneChecked()) {
+for (var i = 0; i < importButtons.length; i++)
+{
+importButtons[i].disabled = false;
+}
+} else {
+for (var i = 0; i < importButtons.length; i++)
+{
+importButtons[i].disabled = true;
+}
+}
+}
+
+function isOneChecked() {
+form = document.getElementById("arxivForm");
+for (var i = 0; i < form.elements.length; i++)
+{
+if (form.elements[i].checked == true)
+{
+return true;
+}
+}
+return false;
+}
+//]]>
+</script>';
 
 print "<div id=\"arxiv\">\n";
 
@@ -418,8 +465,8 @@ print "<dl>\n";
 
 if (isset($_SESSION['user_permissions']) AND ereg("(allow_batch_import)", $_SESSION['user_permissions'])) // if the 'user_permissions' session variable does contain 'allow_batch_import'...
 {
-  print "<form action=\"arxiv.php\" method=\"POST\">\n"
-  . "<input type=\"submit\" name=\"submit\" value=\"Import\" title=\"Press this button to import the selected records into the database.\">\n";
+  print "<form id=\"arxivForm\" action=\"arxiv.php\" method=\"POST\">\n"
+  . "<input type=\"submit\" name=\"submit\" value=\"Import\" title=\"Press this button to import the selected records into the database.\" disabled=\"true\">\n";
   if (isset($formVars['SelectAll']))
     {
       print "<input type=\"submit\" name=\"DeSelectAll\" value=\"Deselect All\" title=\"Press this button to deselect all records.\">\n";
@@ -500,7 +547,7 @@ for($i = 0; $i < $arxivCount; $i++)
 
     if (isset($_SESSION['user_permissions']) AND ereg("(allow_batch_import)", $_SESSION['user_permissions'])) // if the 'user_permissions' session variable does contain 'allow_batch_import'...
       {
-	print "<input type=\"radio\" name=\"arXivImport"
+	print "<input type=\"checkbox\" name=\"arXivImport"
 	  . $id
 	  . "\" value=\""
 	  . $id
@@ -509,7 +556,7 @@ for($i = 0; $i < $arxivCount; $i++)
 	  . " for importing\"";
 	if (isset($formVars['SelectAll']))
 	  print "checked";
-	print ">";
+	print " onclick=\"checkChecked();\">";
       }
 
     print "["
@@ -567,7 +614,7 @@ for($i = 0; $i < $arxivCount; $i++)
   }
 
 if (isset($_SESSION['user_permissions']) AND ereg("(allow_batch_import)", $_SESSION['user_permissions'])) // if the 'user_permissions' session variable does contain 'allow_batch_import'...
-  print "<input type=\"submit\" name=\"submit\" value=\"Import\" title=\"Press this button to import the selected records into the database.\">\n</form>";
+  print "<input type=\"submit\" name=\"submit\" value=\"Import\" title=\"Press this button to import the selected records into the database.\" disabled=\"true\">\n</form>";
 
 
 if (!$catchup)
@@ -600,7 +647,7 @@ if (!$catchup)
 	    for ($i = 0; $i<$rowsFound; $i++) {
 	      $row = mysql_fetch_array($result);
 
-
+// FIX ME: link target isn't right
 	      print "<dt><span class=\"list-identifier\"><a href=\""
 		. $row['summary_language']
 		. "\" title=\"Abstract\">"
