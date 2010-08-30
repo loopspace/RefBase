@@ -75,7 +75,7 @@ if (!isset($_SESSION['HeaderString']))
 	$HeaderString = ""; // Provide the default message
       }
     else // -> there were errors validating the user's data input
-      $HeaderString = "<b><span class=\"warning\">There were validation errors regarding the data you entered:</span></b>";
+      $HeaderString = "<b><span class=\"warning\">There were validation errors regarding the data you entered:</span></b><ul><li>" . implode('</li><li>', $errors) . '</li></ul>';
   }
 else // there is already a stored message available
   {
@@ -143,7 +143,6 @@ if (isset($formVars['submit']))
 
 
     saveSessionVariable("formVars", $postData);
-
     header("Location: import_modify.php");
 
   }
@@ -222,7 +221,6 @@ $sort_method = 'arxiv_sort';
 $arxiv_tz = new DateTimeZone('America/New_York');
 $gmt = new DateTimeZone('GMT');
 
-
 if (isset($formVars['date']))
   {
     // date was specified, try to parse it.
@@ -275,14 +273,15 @@ if (isset($formVars['date']))
 	  . $startdate->format('YmdHi')
 	  . "+TO+"
 	  . $enddate->format('YmdHi') 
-	  . "]"
-	  . "&start=0&max_results=500";
+	  . "]";
       }
 
   }
 else
   {
+    $arxivTitle = "math updates on arXiv.org";
     $date = new DateTime();
+    $arxivDate = "Published on:" . $date->format('D, d M Y');
   }
 
 $now = new DateTime();
@@ -385,24 +384,11 @@ if ($tomorrow->format('U') <= $nowsec)
       . '">Tomorrow (ish)</button></form>';
   }
 
-$arxivfeed = new SimplePie();
-$arxivfeed->set_feed_url($url);
-//$arxivfeed->set_feed_url("http://www.math.ntnu.no/~stacey/arxiv_test");
-$arxivfeed->set_input_encoding('UTF-8');
-$arxivfeed->set_output_encoding('ISO-8859-1');
-$arxivfeed->enable_cache(true);
-// Cache is located in the same directory as this file
-$arxivfeed->set_cache_location('/home/www/stacey/RefBase/Cache');
-$arxivfeed->set_cache_duration(43200); // 12 hours
-$arxivfeed->enable_order_by_date(false);
-$arxivfeed->init();
+$arxivArray = array();
 
-//$atomNamespace = 'http://www.w3.org/2005/Atom';
-//$opensearchNamespace = 'http://a9.com/-/spec/opensearch/1.1/';
+$maxresults = 40;
+$totalresults = 10; // actually, $totalresult * $maxresults
 
-$arxivArray = $arxivfeed->get_items();
-usort($arxivArray, $sort_method);
-$arxivCount = count($arxivArray);
 
 print '<script type="text/javascript">
 //<![CDATA[
@@ -449,13 +435,6 @@ return false;
 
 print "<div id=\"arxiv\">\n";
 
-if (!$catchup)
-  {
-    $arxivChannel = $arxivfeed->get_feed_tags('', 'channel');
-    $arxivDate = $arxivChannel[0]['child']['']['pubDate']['0']['data'];
-    $arxivTitle = $arxivChannel[0]['child']['']['title']['0']['data'];
-  }
-
 print "<h2>$arxivTitle</h2>\n";
 print "Published on: <i>$arxivDate</i>\n";
 
@@ -480,6 +459,41 @@ if (isset($_SESSION['user_permissions']) AND ereg("(allow_batch_import)", $_SESS
 
 print "<h3>New submissions</h3>"; 
 $cross =0;
+
+$urls = array();
+if ($catchup)
+  {
+    for ($i = 0; $i < $totalresults; $i++)
+      {
+	array_push($urls, $url . "&start=" . ($i*$maxresults) . "&max_results=" . $maxresults);
+      }
+  }
+else
+  {
+    array_push($urls,$url);
+  }
+
+foreach ($urls as $urltoget)
+  {
+
+	$arxivfeed = new SimplePie();
+	$arxivfeed->set_feed_url($urltoget);
+	$arxivfeed->set_input_encoding('UTF-8');
+	$arxivfeed->set_output_encoding('ISO-8859-1');
+	$arxivfeed->enable_cache(true);
+// Cache is located in the same directory as this file
+	$arxivfeed->set_cache_location('/home/www/stacey/RefBase/Cache');
+	$arxivfeed->set_cache_duration(43200); // 12 hours
+	$arxivfeed->enable_order_by_date(false);
+	$arxivfeed->init();
+	$arxivArray = $arxivfeed->get_items();
+
+usort($arxivArray, $sort_method);
+$arxivCount = count($arxivArray);
+
+if (!arxivCount)
+  break;
+
 
 for($i = 0; $i < $arxivCount; $i++)
   {
@@ -537,10 +551,20 @@ for($i = 0; $i < $arxivCount; $i++)
 	continue;
       }
 
-    if ($status == "CROSS LISTED" and !$cross)
+    if ($status == "CROSS LISTED")
       {
-      print '<h3>Cross-Lists</h3>';
-      $cross=1;
+	if ($catchup)
+	  {
+	    $title .= " <span class=\"arxivCross\">(cross-listed)</span>";
+	  }
+	else
+	  {
+	    if (!$cross)
+	      {
+		print '<h3>Cross-Lists</h3>';
+		$cross=1;
+	      }
+	  }
       }
 
     print "<dt>";
@@ -612,6 +636,13 @@ for($i = 0; $i < $arxivCount; $i++)
 </dd>';
 
   }
+$arxivfeed->__destruct();
+unset($arxivArray);
+unset($arxivfeed);
+sleep(3);
+  }
+
+
 
 if (isset($_SESSION['user_permissions']) AND ereg("(allow_batch_import)", $_SESSION['user_permissions'])) // if the 'user_permissions' session variable does contain 'allow_batch_import'...
   print "<input type=\"submit\" name=\"submit\" value=\"Import\" title=\"Press this button to import the selected records into the database.\" disabled=\"true\">\n</form>";
