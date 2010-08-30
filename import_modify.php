@@ -52,6 +52,17 @@
 		$formVars[$varname] = stripSlashesIfMagicQuotes($value); // function 'stripSlashesIfMagicQuotes()' is defined in 'include.inc.php'
 	}
 
+// formVars may have been passed in the session cookie (say, from arxiv.php) so _if_ we didn't get any from the form, we check the session cookie
+
+if (!array_key_exists('formType',$formVars))
+  {
+    foreach ($_SESSION['formVars'] as $varname => $value)
+      {
+	$formVars[$varname] = stripSlashesIfMagicQuotes($value); // function 'stripSlashesIfMagicQuotes()' is defined in 'include.inc.php'
+      }
+  }
+
+
 	// --------------------------------------------------------------------
 
 	// Extract the ID of the client from which the query originated:
