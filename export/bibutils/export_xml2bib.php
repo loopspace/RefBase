@@ -45,6 +45,7 @@
 
 function exportBibTeX($result)
 {
+      $exportArray = array();
   while ($row = @ mysql_fetch_array($result))
     {
 
@@ -131,7 +132,6 @@ function exportBibTeX($result)
 					      );
 
 
-      $exportArray = array();
 
       foreach ($row as $rowFieldName => $rowFieldValue)
 	{
