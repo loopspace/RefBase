@@ -43,6 +43,7 @@
 <html>
 <head profile="http://a9.com/-/spec/opensearch/1.1/">
 	<title><?php echo $pageTitle; ?></title>
+	<link rel="shortcut icon" href="favicon.png" type="image/png" />
 	<meta name="date" content="<?php echo date('d-M-y'); ?>">
 	<meta name="robots" content="<?php echo $metaRobots; ?>">
 	<meta name="description" lang="en" content="<?php echo $metaDescription; ?>">

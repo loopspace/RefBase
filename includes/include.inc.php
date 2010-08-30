@@ -6006,7 +6006,7 @@ EOF;
 
 	// Generate an URL pointing to a RSS feed or any of the supported export/citation formats for the given query:
 	// '$urlType' must be one of these: - RSS XML
-	//                                  - export formats:   ADS, BibTeX, Endnote, ISI, RIS, Atom XML, MODS XML, OAI_DC XML, ODF XML, SRW_DC XML, SRW_MODS XML, Word XML
+	//                                  - export formats:   ADS, BibTeX, Endnote, ISI, RIS, Atom XML, MODS XML, OAI_DC XML, ODF XML, SRW_DC XML, SRW_MODS XML, Word XML, Maruku
 	//                                  - citation formats: RTF, PDF, LaTeX, Markdown, ASCII, LaTeX .bbl
 	//                                  - default format:   html (session variable 'userDefaultView' specifies the default display type)
 	function generateURL($baseURL, $urlType, $queryParametersArray, $encodeAmpersands = false, $showRows = 0, $rowOffset = 0, $citeStyle = "", $citeOrder = "")
@@ -6056,7 +6056,7 @@ EOF;
 			}
 
 			// - export formats:
-			if (eregi("^(ADS|BibTeX|Endnote|RIS|ISI|Atom XML|MODS XML|OAI_DC XML|ODF XML|SRW_DC XML|SRW_MODS XML|Word XML)$", $urlType))
+			if (eregi("^(ADS|BibTeX|Endnote|RIS|ISI|Atom XML|MODS XML|OAI_DC XML|ODF XML|SRW_DC XML|SRW_MODS XML|Word XML|Maruku)$", $urlType))
 			{
 				if (!isset($queryParametersArray["exportType"]))
 				{
