@@ -204,7 +204,7 @@ INSERT INTO `formats` VALUES (1, 'MODS XML', 'import', 'true', 'bibutils/import_
 (32, 'OAI_DC XML', 'export', 'true', 'export_oaidcxml.php', 'B170', 1),
 (33, 'SRW_DC XML', 'export', 'true', 'export_srwxml.php', 'B190', 1),
 (34, 'ADS', 'export', 'true', 'bibutils/export_xml2ads.php', 'B005', 2),
-(35, 'arXiv XML', 'import', 'true', 'import_arxiv2refbase.php', 'A130', 1);
+(35, 'arXiv XML', 'import', 'true', 'import_arxiv2refbase.php', 'A130', 1),
 (36, 'MathSciNet', 'import', 'true', 'bibutils/import_bib2refbase.php', 'A130', 4),
 (37, 'Maruku', 'export', 'true', 'export_maruku.php', 'B005', 1);
 
