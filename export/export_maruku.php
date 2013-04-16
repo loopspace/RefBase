@@ -175,7 +175,7 @@ function exportMaruku($result)
 
     $MarukuEntry = "[[!redirects "
       . $citeKey
-      . "]]\n\n###Reference Detailes###\n\n+--\ncite key\n: "
+      . "]]\n\n###Reference Details###\n\n+--\ncite key\n: "
       . $citeKey
       . "\n\n";
 

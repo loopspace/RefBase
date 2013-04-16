@@ -273,7 +273,7 @@ if (isset($formVars['date']))
 	  . $startdate->format('YmdHi')
 	  . "+TO+"
 	  . $enddate->format('YmdHi') 
-	  . "]";
+	  . "]+AND+cat:math.*";
       }
 
   }
@@ -601,7 +601,7 @@ for($i = 0; $i < $arxivCount; $i++)
     print "</dt>\n";
 
     print '<dd>
-<div class="meta">
+<div class="meta clickDown" tabindex="0">
 <div class="list-title">
 <span class="descriptor">Title:</span>';
     
@@ -620,8 +620,11 @@ for($i = 0; $i < $arxivCount; $i++)
     print $subject;
 
     print '</div>';
+    print '<div class="list-abstract hide">';
 
     print $abstract;
+
+    print '</div>';
 
     if (isset($_SESSION['user_permissions']) AND ereg("(allow_batch_import)", $_SESSION['user_permissions'])) // if the 'user_permissions' session variable does contain 'allow_batch_import'...
       print "Keywords:&nbsp;"

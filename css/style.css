@@ -887,3 +887,11 @@ a:hover .toggletxt {
 #arxiv .list-subjects {
   font-size: 90%;
   }
+
+.clickDown .hide {
+  display: none;
+}
+
+.clickDown:focus .hide {
+  display: block;
+}

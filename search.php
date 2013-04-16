@@ -1588,6 +1588,12 @@
 													$linkArray[] = "\n\t\t<a href=\"" . $openURL . "\"><img src=\"" . $baseURL . "img/xref.gif\" alt=\"" . $loc["openurl"] . "\" title=\"" . $loc["LinkTitle_FindRecordDetailsViaOpenURL"] . "\" width=\"18\" height=\"20\" hspace=\"0\" border=\"0\"></a>";
 												}
 
+												if (!empty($row["title"]))
+												  {
+												    // Generate a link to lSpace
+												    $title = trim($row["title"]);
+												    $linkArray[] = "\n\t\t<a href=\"http://ncatlab.org/lspace/show/" . rawurlencode($title) . "\"><img src=\"" . $baseURL . "img/nlab.png\" alt=\"" . $title . "\" title=\"Goto lSpace page\" width=\"17\" height=\"20\" hspace=\"0\" border=\"0\"></a>";
+												  }
 												// insert COinS (ContextObjects in Spans):
 												$linkArray[] = "\n\t\t" . coins($row); // function 'coins()' is defined in 'openurl.inc.php'
 
@@ -2177,6 +2183,7 @@
 
 				if (isset($_SESSION['user_export_formats']))
 				{
+
 					$optionTags = buildSelectMenuOptions($_SESSION['user_export_formats'], " *; *", "\t\t\t", false); // build properly formatted <option> tag elements from the items listed in the 'user_export_formats' session variable
 					$ResultsFooterRow .= $optionTags;
 				}
